@@ -36,103 +36,121 @@ $("#cleanJsonSource").click(function () {
 $("#parserJsonSource").click(function () {
     try
     {
-        //获取json与需要展示的列
-        var jsonSource = $("#jsonSource").val();
-        var displayColumns = $("#displayColumns").val();
-        var filterRule = $("#filterRule").val();
-        var needAllColumns = false;
-
-        //特殊处理，当displayColumns为空或者 '*' 时，显示所有字段
-        if(displayColumns=="" || displayColumns=="*" || displayColumns == undefined || displayColumns == null)
-        {
-            needAllColumns = true;
+        var files = $('input[name="jsonFile"]').prop('files');
+        if (files.length == 0) {
+          var jsonSource = $("#jsonSource").val();
+          doParise(jsonSource);
+        } else {
+          var reader = new FileReader();
+          reader.readAsText(files[0], "UTF-8");
+          reader.onload = function(evt) {
+            var fileString = evt.target.result;
+            doParise(fileString);
+          }
         }
 
-        var _jsonObject = JSON.parse(jsonSource);
-        var _columns = [];
-        if(!needAllColumns)
-        {
-            _columns = displayColumns.split(',');
-        }
+        var doParise = function(jsonSource) {
+          //获取json与需要展示的列
+          // var jsonSource = $("#jsonSource").val();
+          var displayColumns = $("#displayColumns").val();
+          var filterRule = $("#filterRule").val();
+          var needAllColumns = false;
 
-        var _filterRule = JSON.parse(filterRule);
+          //特殊处理，当displayColumns为空或者 '*' 时，显示所有字段
+          if(displayColumns=="" || displayColumns=="*" || displayColumns == undefined || displayColumns == null)
+          {
+              needAllColumns = true;
+          }
 
-        var dataSet = new Array();
+          var _jsonObject = JSON.parse(jsonSource);
+          var _columns = [];
+          if(!needAllColumns)
+          {
+              _columns = displayColumns.split(',');
+          }
 
-        for (i = 0; i < _jsonObject.length; i++) {
+          var _filterRule = JSON.parse(filterRule);
 
-            var _object = _jsonObject[i];
-            
-            if(needAllColumns)
-            {
-            const keys= Object.keys(_object); 
-            _columns = _columns.concat(keys.filter(v => !_columns.includes(v)));
-            }
+          var dataSet = new Array();
 
-            var row = new Array();
-            var isremoved = false;
-            for (j = 0; j < _columns.length; j++) {
-            var _value = "";
+          for (i = 0; i < _jsonObject.length; i++) {
 
-            var _columnName = _columns[j];
-            if (_object[_columnName] !== null && _object[_columnName] !== undefined) {
-                _value = _object[_columnName];
-            }
+              var _object = _jsonObject[i];
+              
+              if(needAllColumns)
+              {
+              const keys= Object.keys(_object); 
+              _columns = _columns.concat(keys.filter(v => !_columns.includes(v)));
+              }
 
-            if (_filterRule !== null && _filterRule !== undefined && _filterRule[_columnName] !== null && _filterRule[_columnName] !== undefined) {
-                if (_filterRule[_columnName] == "*" && (_value == null || _value == "")) {
-                isremoved = true;
-                break;
-                }
-                if (_filterRule[_columnName] !== "*" && _filterRule[_columnName] !== "") {
-                var _rules = _filterRule[_columnName].split(',');
-                if ($.inArray(_value, _rules) == -1) {
-                    isremoved = true;
-                    break;
-                }
-                }
+              var row = new Array();
+              var isremoved = false;
+              for (j = 0; j < _columns.length; j++) {
+              var _value = "";
 
-            }
+              var _columnName = _columns[j];
+              if (_object[_columnName] !== null && _object[_columnName] !== undefined) {
+                  _value = _object[_columnName];
+              }
 
-            row[j] = _value;
-            }
-            if (!isremoved) {
-            dataSet.push(row);
-            }
-        }
+              if (_filterRule !== null && _filterRule !== undefined && _filterRule[_columnName] !== null && _filterRule[_columnName] !== undefined) {
+                  if (_filterRule[_columnName] == "*" && (_value == null || _value == "")) {
+                  isremoved = true;
+                  break;
+                  }
+                  if (_filterRule[_columnName] !== "*" && _filterRule[_columnName] !== "") {
+                  var _rules = _filterRule[_columnName].split(',');
+                  if ($.inArray(_value, _rules) == -1) {
+                      isremoved = true;
+                      break;
+                  }
+                  }
 
-        var columnNames = new Array();
-        for (j = 0; j < _columns.length; j++) {
-            var _title = { "title": _columns[j] };
-            columnNames[j] = _title;
-        }
+              }
 
-        if (table !== null && table !== undefined) {
-            table.destroy();
-            $('#dataTable').empty();
-        }
+              row[j] = _value;
+              }
+              if (!isremoved) {
+              dataSet.push(row);
+              }
+          }
 
-        var needDuplicate = $("#needDuplicate").is(':checked');
+          var columnNames = new Array();
+          for (j = 0; j < _columns.length; j++) {
+              var _title = { "title": _columns[j] };
+              columnNames[j] = _title;
+          }
 
-        if (needDuplicate) {
-            dataSet = dataSet.unique();
-        }
+          if (table !== null && table !== undefined) {
+              table.destroy();
+              $('#dataTable').empty();
+          }
 
-        $.fn.dataTable.ext.errMode = 'none';
-        table = $('#dataTable').DataTable({
-            data: dataSet,
-            columns: columnNames,
-            lengthMenu: [ 20, 50, 80, 100 ]
-        });
+          var needDuplicate = $("#needDuplicate").is(':checked');
 
-        localStorage.setItem("point_displayColimns", displayColumns);
-        localStorage.setItem("point_filterRule", filterRule);
-        localStorage.setItem("point_needDuplicate", needDuplicate);
+          if (needDuplicate) {
+              dataSet = dataSet.unique();
+          }
 
-        $('body,html').animate({ scrollTop: $('#scrollToSearch').offset().top }, 200);
+          $.fn.dataTable.ext.errMode = 'none';
+          table = $('#dataTable').DataTable({
+              data: dataSet,
+              columns: columnNames,
+              lengthMenu: [ 20, 50, 80, 100 ]
+          });
+
+          localStorage.setItem("point_displayColimns", displayColumns);
+          localStorage.setItem("point_filterRule", filterRule);
+          localStorage.setItem("point_needDuplicate", needDuplicate);
+
+          $('body,html').animate({ scrollTop: $('#scrollToSearch').offset().top }, 200);
+        };
+
+        
     }
     catch(e)
     {
+      console.log(e);
         alert("Please check your json format.");
     }
 });

@@ -304,6 +304,13 @@ input[type="month"] {
   -webkit-appearance: listbox;
 }
 
+input[type="file"] {
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+  border: #17a673;
+}
+
 textarea {
   overflow: auto;
   resize: vertical;
